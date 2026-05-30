@@ -1,0 +1,12 @@
+.env
+.env.*
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.ruff_cache/
+.mypy_cache/
+.DS_Store
+sysfiles/
+batch/madefiles/
+scripts/madefiles/

@@ -1,0 +1,43 @@
+{% set is_logged_in = is_logged_in | default(false) %}
+{% set nav_active = nav_active | default(none) %}
+<nav class="navbar">
+    <div class="navbar-inner layout-inner">
+        <a href="{{ url_for('index') }}" class="navbar-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="로고">
+            <span>내 찐친 고비</span>
+        </a>
+        <div class="navbar-right">
+            <div class="auth-status">
+                {% if is_logged_in %}
+                <span class="status-badge logged-in">
+                    <span class="status-dot"></span>
+                    <span>로그인됨</span>
+                </span>
+                <span class="status-user">{{ display_name }} ({{ login_id }})</span>
+                {% else %}
+                <span class="status-badge guest">
+                    <span class="status-dot"></span>
+                    <span>로그인 안 됨</span>
+                </span>
+                {% endif %}
+            </div>
+            {% if is_logged_in %}
+            {% if nav_active == 'mypage' %}
+            <span class="nav-btn nav-btn-active" aria-current="page">마이페이지</span>
+            {% else %}
+            <a href="{{ url_for('mypage') }}" class="nav-btn nav-btn-ghost">마이페이지</a>
+            {% endif %}
+            <button type="button"
+                    id="open-chat-modal"
+                    class="nav-btn nav-btn-outline"
+                    data-open-chat-modal
+                    aria-haspopup="dialog"
+                    aria-controls="chat-modal">채팅</button>
+            <a href="{{ url_for('logout') }}" class="nav-btn nav-btn-ghost">로그아웃</a>
+            {% else %}
+            <a href="{{ url_for('signup') }}" class="nav-btn nav-btn-outline">회원가입</a>
+            <a href="{{ url_for('login') }}" class="nav-btn nav-btn-primary">로그인</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>

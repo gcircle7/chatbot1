@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 — 내 찐친 고비</title>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Lato:wght@400;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth-common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="logo">
+            <div class="title">내 찐친 고비</div>
+        </div>
+
+        <form method="post" action="{{ url_for('login') }}">
+            <label for="login_id">아이디</label>
+            <input type="text" id="login_id" name="login_id"
+                   autocomplete="username" autofocus required>
+
+            <label for="password">비밀번호</label>
+            <input type="password" id="password" name="password"
+                   autocomplete="current-password" required>
+
+            <div class="error">{{ error or '' }}</div>
+
+            <button type="submit">로그인</button>
+        </form>
+
+        <div class="aux-buttons">
+            <a href="{{ url_for('signup') }}" class="aux-btn">회원가입</a>
+            <a href="{{ url_for('forgot_password') }}" class="aux-btn">비밀번호 찾기</a>
+        </div>
+
+        <p class="login-footer-link">
+            <a href="{{ url_for('index') }}">← 서비스 안내로 돌아가기</a>
+        </p>
+    </div>
+</body>
+</html>

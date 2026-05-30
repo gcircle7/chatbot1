@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Virtual environments
+.venv/
+
+# 환경변수
+.env
+.env.*
+!**/.env.example
+
+# Test / lint cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Editor
+.DS_Store
+.cursor/
+
+# 서버 생성 파일
+Backend/chatbot_server/sysfiles/
+Backend/chatbot_server/scripts/madefiles/
+Backend/chatbot_server/batch/madefiles/

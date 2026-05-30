@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이페이지 — 내 찐친 고비</title>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Lato:wght@400;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mypage.css') }}">
+</head>
+<body>
+    {% include 'layout/header.html' %}
+
+    <main class="page layout-inner">
+        <header class="page-header">
+            <h1>마이페이지</h1>
+            <p>계정 정보를 확인하고 챗봇 상담을 이어갈 수 있어요.</p>
+        </header>
+
+        <section class="card">
+            <h2>내 계정</h2>
+            <dl class="profile-grid">
+                <div class="profile-item">
+                    <dt>표시 이름</dt>
+                    <dd>{{ display_name }}</dd>
+                </div>
+                <div class="profile-item">
+                    <dt>아이디</dt>
+                    <dd>{{ login_id }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="card">
+            <h2>접속 이력</h2>
+            {% if access_history %}
+            <div class="history-table-wrap">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">일시</th>
+                            <th scope="col">구분</th>
+                            <th scope="col">IP</th>
+                            <th scope="col">접속 환경</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in access_history %}
+                        <tr>
+                            <td>{{ row.created_at }}</td>
+                            <td>
+                                <span class="event-badge {{ row.event_type }}">{{ row.event_label }}</span>
+                                {% if row.message %}
+                                <span class="history-message">{{ row.message }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ row.ip_address }}</td>
+                            <td class="history-meta">{{ row.user_agent }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="history-empty">아직 기록된 접속 이력이 없어요.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>바로가기</h2>
+            <div class="actions">
+                <button class="btn btn-primary"
+                        type="button"
+                        data-open-chat-modal>채팅 시작</button>
+                <a href="{{ url_for('index') }}" class="btn btn-outline">홈으로</a>
+            </div>
+        </section>
+
+        {% include 'layout/footer.html' %}
+    </main>
+</body>
+</html>

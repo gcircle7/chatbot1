@@ -1,0 +1,114 @@
+* { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #fafafa;
+    font-family: 'Lato', Arial, sans-serif;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 430px;
+    background: white;
+    border: 2px solid #EEEEEE;
+    border-radius: 15px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25),
+                0 10px 10px rgba(0, 0, 0, 0.22);
+    padding-bottom: 28px;
+}
+
+.login-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #F4F4F4;
+    border-top-left-radius: 13px;
+    border-top-right-radius: 13px;
+    padding: 8px 0;
+}
+
+.login-header img {
+    width: 60px;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.login-header .title {
+    margin-left: 20px;
+    font-size: 32px;
+    font-family: 'Do Hyeon', sans-serif;
+}
+
+form {
+    padding: 26px 30px 0 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+label {
+    font-size: 13px;
+    color: #434651;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    transition: border 0.1s;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    border: 2px solid #DAA520;
+    padding: 9px 13px;
+}
+
+.error {
+    color: #c0392b;
+    font-size: 13px;
+    text-align: center;
+    min-height: 18px;
+}
+
+button {
+    margin-top: 4px;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #DAA520;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+button:hover { background: #b8891b; }
+
+.back-link {
+    text-align: center;
+    margin: 14px 30px 0 30px;
+    font-size: 13px;
+}
+
+.back-link a {
+    color: #6b5300;
+    text-decoration: none;
+}
+
+.back-link a:hover {
+    color: #DAA520;
+    text-decoration: underline;
+}

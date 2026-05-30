@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 찐친 고비 — AI 챗봇 상담</title>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Lato:wght@400;700&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    {% include 'layout/header.html' %}
+
+    <main class="page layout-inner">
+        <header class="hero">
+            <img class="hero-logo"
+                 src="{{ url_for('static', filename='images/logo.png') }}"
+                 alt="내 찐친 고비 로고">
+            <div class="hero-body">
+                <h1 class="hero-title">내 찐친 고비</h1>
+                <p class="hero-subtitle">
+                    언제든 편하게 대화할 수 있는 AI 챗봇 상담 서비스입니다.<br>
+                    고민이 있을 때, 궁금한 게 있을 때 찐친처럼 이야기해 드려요.
+                </p>
+            </div>
+        </header>
+
+        <div class="content-grid">
+            <section class="card card-intro">
+                <h2>서비스 소개</h2>
+                <p>
+                    <strong>내 찐친 고비</strong>는 24시간 이용 가능한 챗봇 상담 서비스입니다.
+                    일상적인 대화부터 간단한 질문까지, 부담 없이 메시지를 내면
+                    친근한 톤으로 답변을 받을 수 있습니다.
+                </p>
+                <p>
+                    로그인 후 나만의 채팅방에서 대화를 이어가고,
+                    이전 상담 기록도 확인할 수 있습니다.
+                </p>
+            </section>
+
+            <section class="card card-features">
+                <h2>이런 점이 좋아요</h2>
+                <ul class="features">
+                    <li>
+                        <div class="feature-icon">💬</div>
+                        <div class="feature-text">
+                            <strong>친근한 대화</strong>
+                            <span>딱딱한 FAQ가 아니라, 찐친처럼 자연스럽게 대화합니다.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="feature-icon">⏰</div>
+                        <div class="feature-text">
+                            <strong>24시간 이용</strong>
+                            <span>시간에 구애받지 않고 언제든 상담을 시작할 수 있습니다.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="feature-icon">🔒</div>
+                        <div class="feature-text">
+                            <strong>안전한 계정</strong>
+                            <span>회원가입 후 로그인하면 나만의 상담 공간을 이용할 수 있습니다.</span>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="card card-cta">
+                <h2>시작하기</h2>
+                <p>
+                    이미 계정이 있으시면 로그인 후 바로 채팅을 시작하세요.
+                    처음이시라면 회원가입 후 이용해 보세요.
+                </p>
+                <div class="actions">
+                    {% if is_logged_in %}
+                    <button class="btn btn-primary"
+                            type="button"
+                            data-open-chat-modal>채팅 시작</button>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">로그인</a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-outline">회원가입</a>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        {% include 'layout/footer.html' %}
+    </main>
+</body>
+</html>

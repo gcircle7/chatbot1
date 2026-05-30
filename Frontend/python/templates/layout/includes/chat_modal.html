@@ -1,0 +1,175 @@
+<div id="chat-modal"
+     class="chat-modal-backdrop"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="chat-modal-title"
+     hidden>
+    <div class="chat-modal-panel" id="chat-modal-panel">
+        <div class="chat-modal-header" id="chat-modal-header">
+            <h2 id="chat-modal-title" class="chat-modal-title">채팅 ({{ display_name }})</h2>
+            <button type="button"
+                    class="chat-modal-close"
+                    id="close-chat-modal"
+                    aria-label="채팅 닫기">×</button>
+        </div>
+        <iframe class="chat-modal-frame"
+                id="chat-modal-iframe"
+                title="채팅"
+                src="about:blank"
+                data-chat-url="{{ url_for('chat_app', embed=1) }}"></iframe>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modal = document.getElementById('chat-modal');
+        var panel = document.getElementById('chat-modal-panel');
+        var header = document.getElementById('chat-modal-header');
+        var iframe = document.getElementById('chat-modal-iframe');
+        var openBtns = document.querySelectorAll('[data-open-chat-modal]');
+        var closeBtn = document.getElementById('close-chat-modal');
+        var lastOpenBtn = null;
+        if (!modal || !iframe || !closeBtn) {
+            return;
+        }
+
+        var chatUrl = iframe.getAttribute('data-chat-url');
+        var isDragging = false;
+        var dragOffsetX = 0;
+        var dragOffsetY = 0;
+        var panelPositioned = false;
+
+        function clampPanelPosition(left, top) {
+            var margin = 8;
+            var maxLeft = window.innerWidth - panel.offsetWidth - margin;
+            var maxTop = window.innerHeight - panel.offsetHeight - margin;
+            return {
+                left: Math.max(margin, Math.min(left, maxLeft)),
+                top: Math.max(margin, Math.min(top, maxTop))
+            };
+        }
+
+        function setPanelPosition(left, top) {
+            var pos = clampPanelPosition(left, top);
+            panel.style.left = pos.left + 'px';
+            panel.style.top = pos.top + 'px';
+        }
+
+        function placePanelDefault() {
+            var margin = window.innerWidth <= 480 ? 12 : 24;
+            var left = window.innerWidth - panel.offsetWidth - margin;
+            var top = (window.innerHeight - panel.offsetHeight) / 2;
+            if (window.innerWidth <= 480) {
+                left = margin;
+                panel.style.width = (window.innerWidth - margin * 2) + 'px';
+            } else {
+                panel.style.width = '';
+            }
+            setPanelPosition(left, top);
+            panelPositioned = true;
+        }
+
+        function openChatModal() {
+            if (iframe.getAttribute('src') === 'about:blank') {
+                iframe.setAttribute('src', chatUrl);
+            }
+            modal.hidden = false;
+            modal.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+            if (!panelPositioned) {
+                placePanelDefault();
+            } else {
+                setPanelPosition(
+                    parseFloat(panel.style.left) || 0,
+                    parseFloat(panel.style.top) || 0
+                );
+            }
+            closeBtn.focus();
+        }
+
+        function closeChatModal() {
+            stopDrag();
+            modal.classList.remove('is-open');
+            modal.hidden = true;
+            document.body.style.overflow = '';
+            if (lastOpenBtn) {
+                lastOpenBtn.focus();
+            }
+        }
+
+        function stopDrag() {
+            if (!isDragging) {
+                return;
+            }
+            isDragging = false;
+            panel.classList.remove('is-dragging');
+            document.body.classList.remove('chat-modal-drag-active');
+        }
+
+        function startDrag(clientX, clientY) {
+            var rect = panel.getBoundingClientRect();
+            isDragging = true;
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
+            panel.classList.add('is-dragging');
+            document.body.classList.add('chat-modal-drag-active');
+        }
+
+        function onDragMove(clientX, clientY) {
+            if (!isDragging) {
+                return;
+            }
+            setPanelPosition(clientX - dragOffsetX, clientY - dragOffsetY);
+        }
+
+        header.addEventListener('mousedown', function (e) {
+            if (e.button !== 0 || e.target.closest('.chat-modal-close')) {
+                return;
+            }
+            e.preventDefault();
+            startDrag(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            onDragMove(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', stopDrag);
+
+        window.addEventListener('resize', function () {
+            if (!modal.classList.contains('is-open')) {
+                return;
+            }
+            if (window.innerWidth <= 480) {
+                var margin = 12;
+                panel.style.width = (window.innerWidth - margin * 2) + 'px';
+            } else {
+                panel.style.width = '';
+            }
+            setPanelPosition(
+                parseFloat(panel.style.left) || 0,
+                parseFloat(panel.style.top) || 0
+            );
+        });
+
+        openBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                lastOpenBtn = btn;
+                openChatModal();
+            });
+        });
+        closeBtn.addEventListener('click', closeChatModal);
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeChatModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal.classList.contains('is-open')) {
+                closeChatModal();
+            }
+        });
+    })();
+</script>

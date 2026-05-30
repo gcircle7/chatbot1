@@ -1,0 +1,17 @@
+.hint {
+    font-size: 11px;
+    color: #999;
+    font-weight: normal;
+    margin-left: 6px;
+}
+
+.demo-notice {
+    margin: 18px 30px 0 30px;
+    padding: 10px 12px;
+    background: #FFF8E1;
+    border: 1px dashed #DAA520;
+    border-radius: 10px;
+    font-size: 11px;
+    color: #6b5300;
+    line-height: 1.4;
+}

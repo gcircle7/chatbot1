@@ -1,0 +1,188 @@
+.page-header {
+    margin-bottom: 16px;
+    padding: 28px 32px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.page-header h1 {
+    margin: 0 0 8px;
+    font-family: 'Do Hyeon', sans-serif;
+    font-size: 28px;
+    font-weight: normal;
+    letter-spacing: -0.3px;
+}
+
+.page-header p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-muted);
+}
+
+.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 28px 32px;
+    margin-bottom: 16px;
+}
+
+.card h2 {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+    font-family: 'Do Hyeon', sans-serif;
+    font-size: 18px;
+    font-weight: normal;
+    letter-spacing: -0.3px;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 24px;
+    margin: 0;
+}
+
+.profile-item dt {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.profile-item dd {
+    margin: 0;
+    font-size: 15px;
+    color: var(--color-text);
+    word-break: break-all;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: white;
+    border: 1px solid var(--color-accent);
+}
+
+.btn-primary:hover {
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+}
+
+.btn-outline {
+    background: var(--color-surface);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+}
+
+.btn-outline:hover {
+    background: var(--color-accent-soft);
+}
+
+.history-empty {
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    background: #fafbfc;
+    border: 1px dashed var(--color-border);
+    border-radius: 6px;
+}
+
+.history-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.history-table th,
+.history-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+}
+
+.history-table th {
+    background: #fafbfc;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-light);
+    white-space: nowrap;
+}
+
+.history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.history-table tbody tr:hover {
+    background: #fafbfc;
+}
+
+.event-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.event-badge.login_success { background: #e8f5e9; color: #2e7d32; }
+.event-badge.logout { background: #f3f4f6; color: #555; }
+.event-badge.login_failed { background: #ffebee; color: #c62828; }
+.event-badge.session_expired { background: #fff3e0; color: #e65100; }
+.event-badge.password_reset { background: #e3f2fd; color: #1565c0; }
+
+.history-meta {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.history-message {
+    display: block;
+    margin-top: 4px;
+    color: var(--color-text-light);
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .profile-grid { grid-template-columns: 1fr; }
+    .page-header, .card { padding: 22px 20px; }
+    .history-table th:nth-child(4),
+    .history-table td:nth-child(4) {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .actions { flex-direction: column; }
+    .btn { width: 100%; }
+}

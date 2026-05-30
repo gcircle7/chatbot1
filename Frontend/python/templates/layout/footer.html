@@ -1,0 +1,4 @@
+<p class="footer-note">© 내 찐친 고비 — AI 챗봇 상담 서비스</p>
+{% if is_logged_in | default(false) %}
+{% include 'layout/includes/chat_modal.html' %}
+{% endif %}
