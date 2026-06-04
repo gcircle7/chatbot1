@@ -52,12 +52,12 @@ class ChatbotServer:
         for session in sessions:
             # expire 시각이 현재 시각보다 작으면 실행 (세션 만료 상태로 간주)
             expires_at = session.get("expires_at")
-            if expires_at is not None and now > expires_at:
+            if expires_at is not None and session.get("role") != "channel" and now > expires_at:
                 session_expire_ids.append(session["session_id"])       
             else:
-                session_active_ids.append(session["session_id"])     
+                session_active_ids.append(session["session_id"])      
 
-        set_expire_sessions(session_expire_ids)
+        set_expire_sessions(session_expire_ids) 
 
         self.session_active_list = session_active_ids
         for session in sessions:
@@ -131,7 +131,7 @@ class ChatbotServer:
 
                 cb_bot = self._chatbot[session_id]
                 cb_bot.add_user_message(request["request"]["request_message"])
-                cb_bot.save_one_chat()  # 챗봇 내역 DB에 저장
+                cb_bot.save_one_chat()  # 챗봇 내역 DB에 저장  
 
                 tf, response = cb_bot.send_request()
                 if not tf:
@@ -144,7 +144,9 @@ class ChatbotServer:
 
                     # Client 전달용 테이블에 챗봇 응답 저장
                     response_message=response["choices"][0]["message"]["content"]
+                    print(f"response_send 응답: {response_message}") 
                     retval = response_send(request_id, session_id, status="responsed", response_message=response_message) 
+                    print("retval : ", retval) 
                     # 챗봇 응답 상태 업데이트 (completed or failed)
                     if not retval["ok"]:
                         request_status_update(request_id, "failed", error_message=retval["error"])
@@ -152,8 +154,8 @@ class ChatbotServer:
                         request_status_update(request_id, "completed")
 
                 cb_bot.handle_token_limit(response)
-                cb_bot.clean_context()
-                cb_bot.save_one_chat()  #  instruction 제거(clean_context) 후 챗봇 내역 DB에 저장 
+                cb_bot.clean_context() 
+                cb_bot.save_one_chat()      #  instruction 제거(clean_context) 후 챗봇 내역 DB에 저장 
             except Exception as e:
                 import traceback
                 print("오류 발생:", e)

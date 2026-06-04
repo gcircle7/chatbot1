@@ -12,10 +12,10 @@ def get_valid_sessions() -> list[dict]:
                 cur.execute(
                     """
                     SELECT s.id AS session_id, s.db_user_id, s.session_token, s.status, s.expires_at,
-                        u.login_id, u.username AS display_name
+                        u.login_id, u.role, u.username AS display_name
                     FROM user_session s
                     INNER JOIN user_info u ON u.id = s.db_user_id
-                    WHERE s.status = 'active'
+                    WHERE s.status = 'active' 
                     """,
                 )
                 rows = cur.fetchall()
@@ -35,12 +35,12 @@ def set_expire_sessions(session_ids: list[int]) -> dict:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("START TRANSACTION")
-                placeholders = ", ".join(["%s"] * len(session_ids))
+                tgt_ids = ", ".join(str(session_id) for session_id in session_ids)
                 cur.execute(
                     f"""
                     UPDATE user_session
                     SET status = 'expired'
-                    WHERE id in ({placeholders})
+                    WHERE id in ({tgt_ids})
                     """,
                     tuple(session_ids),
                 )
