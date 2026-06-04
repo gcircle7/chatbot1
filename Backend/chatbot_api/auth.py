@@ -61,7 +61,8 @@ def login(login_id: str, password: str, data: dict | None = None) -> dict:
                     (login_id,),
                 )
                 user = cur.fetchone()
-    except Exception:
+    except Exception as e:
+        print(e)
         return {"ok": False, "error": "데이터베이스 연결에 실패했어요."}
 
     if not user:
