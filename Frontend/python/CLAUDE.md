@@ -20,7 +20,7 @@ uv run python application.py 8000   # 포트 인자 필수 — sys.argv[1], 누�
 
 `http://localhost:8000/` 접속. 정상 동작하려면 **chatbot_api(8006)가 함께 떠 있어야** 한다(로그인·세션 검증이 거기로 간다).
 
-`.env`: `cp .env.example .env`. 핵심 키 — `FLASK_SECRET_KEY`(세션 서명), `CHATBOT_API_URL`(api 주소, 기본 `http://localhost:8006`).
+`.env`: `cp .env.example .env`. 핵심 키 — `FLASK_SECRET_KEY`(세션 서명), `CHATBOT_API_BASE`(api 베이스, 기본 `http://localhost:8006`), `CHATBOT_CHAT_URL`(브라우저 채팅 POST, 기본 `{베이스}/chat-api`). 구 `CHATBOT_API_URL` 은 `CHATBOT_API_BASE` 폴백으로만 인식.
 
 ## 인증 구조
 
@@ -34,11 +34,11 @@ uv run python application.py 8000   # 포트 인자 필수 — sys.argv[1], 누�
 - `GET|POST /login`, `/signup`, `/forgot-password` — 폼 렌더 + api 위임. 이미 로그인 상태면 리다이렉트.
 - `GET /logout` — api `/auth/logout` 호출 후 `session.clear()`.
 - `GET /mypage` — `@login_required`. 접속이력(`_fetch_access_history`) 포함.
-- `GET /chat-app` — `@login_required`. `chat.html` 렌더. `?embed=1` 로 임베드 모드. 세션 값과 `CHATBOT_API_URL` 을 템플릿에 주입.
+- `GET /chat-app` — `@login_required`. `chat.html` 렌더. `?embed=1` 로 임베드 모드. 세션 값과 `CHATBOT_CHAT_URL` 을 템플릿에 주입.
 
 ## 프론트엔드 ↔ chatbot_api 채팅 컨트랙트
 
-`templates/chat.html` 의 `fetchResponse()` 가 **`{{CHATBOT_API_URL}}` 로 직접** POST(프론트 서버 경유 X). `CHATBOT_API_URL` 은 `/chat-api` 엔드포인트를 가리키도록 주입되어야 한다(로컬·ngrok 공개 URL 등).
+`templates/chat.html` 의 `fetchResponse()` 가 **`{{ CHATBOT_CHAT_URL }}` 로 직접** POST(프론트 서버 경유 X). ngrok 등 공개 URL을 쓸 때는 `CHATBOT_CHAT_URL` 만 바꾸면 된다. 인증 호출은 `backend_client` 가 `CHATBOT_API_BASE` 에 `/auth/*` 를 붙인다.
 
 - 요청 본문: `{ db_user_id, session_token, request_message }`
 - 응답 본문: `{ status, response_message, error_message }` — `status` 가 `failed`/`error` 면 `error_message` 를 콘솔에 출력.

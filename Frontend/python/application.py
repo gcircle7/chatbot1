@@ -20,6 +20,7 @@ from backend_client import (
     auth_logout,
     auth_validate_session,
     auth_access_history,
+    get_chat_url,
 )
 
 application = Flask(__name__)
@@ -220,7 +221,7 @@ def chat_app():
         session_token=session["session_token"] if session.get("session_token") else None,
         display_name=session["display_name"] if session.get("display_name") else None,
         embed=embed,
-        CHATBOT_API_URL=os.environ.get("CHATBOT_API_URL"),
+        CHATBOT_CHAT_URL=get_chat_url(),
     )
 
 @atexit.register

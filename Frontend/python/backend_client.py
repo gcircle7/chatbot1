@@ -5,7 +5,27 @@ import os
 import urllib.error
 import urllib.request
 
-API_BASE = os.environ.get("CHATBOT_API_URL", "http://localhost:8006").rstrip("/")
+_DEFAULT_API_BASE = "http://localhost:8006"
+
+
+def get_api_base() -> str:
+    """chatbot_api 베이스 URL (경로는 호출부에서 붙임)."""
+    return (
+        os.environ.get("CHATBOT_API_BASE")
+        or os.environ.get("CHATBOT_API_URL")
+        or _DEFAULT_API_BASE
+    ).rstrip("/")
+
+
+def get_chat_url() -> str:
+    """브라우저 fetch용 채팅 엔드포인트 (전체 URL)."""
+    explicit = os.environ.get("CHATBOT_CHAT_URL")
+    if explicit:
+        return explicit.rstrip("/")
+    return f"{get_api_base()}/chat-api"
+
+
+API_BASE = get_api_base()
 
 _CONNECTION_ERROR = {
     "ok": False,

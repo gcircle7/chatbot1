@@ -84,7 +84,7 @@
     <script>
         (function () {
             async function fetchResponse(message) {
-                const response = await fetch("{{CHATBOT_API_URL}}", {
+                const response = await fetch("{{ CHATBOT_CHAT_URL }}", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

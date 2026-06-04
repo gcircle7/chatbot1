@@ -37,7 +37,7 @@ chatbot_server (워커, _work_loop 루프)
 
 - **api ↔ server 는 오직 큐 테이블로만 연결된다.** 한쪽 코드를 바꿔도 컨트랙트(테이블 컬럼)만 지키면 다른 쪽은 무관하다.
 - api 의 폴링 타임아웃은 20초(`chatbot_client.py`), 카카오 경로(`/chat-kakao`)는 3초 후 ngrok callbackUrl 로 비동기 응답하는 별도 흐름.
-- frontend ↔ api 는 HTTP. `Frontend/python/backend_client.py` 가 `CHATBOT_API_URL`(기본 `http://localhost:8006`)로 `/auth/*` 호출. 로그인 세션 검증은 매 보호 라우트마다 api 의 `/auth/session/validate` 를 탄다(`login_required` 데코레이터).
+- frontend ↔ api 는 HTTP. `Frontend/python/backend_client.py` 가 `CHATBOT_API_BASE`(기본 `http://localhost:8006`)에 `/auth/*` 를 붙여 호출. 브라우저 채팅은 `CHATBOT_CHAT_URL`(기본 `{베이스}/chat-api`)로 직접 POST. 로그인 세션 검증은 매 보호 라우트마다 api 의 `/auth/session/validate` 를 탄다(`login_required` 데코레이터).
 
 ## 실행 방법
 
