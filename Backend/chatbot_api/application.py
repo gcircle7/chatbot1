@@ -7,6 +7,13 @@ from flask import Flask, request, jsonify
 import sys
 import random
 import re
+
+# Windows 콘솔 기본 인코딩(cp949)은 이모지 등 일부 유니코드를 출력하지 못해
+# print 시 UnicodeEncodeError 가 발생한다. 표준 출력 스트림을 UTF-8 로 재설정한다.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 from chatbot_client import ChatbotClient
 
 from auth import (

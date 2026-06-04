@@ -34,7 +34,6 @@ class ChatbotClient:
                     """,
                     (request_id,),
                 )
-                print(f"retrieve_request cur.query: {cur.query}")
                 return cur.fetchone() or None
 
     def _retrieve_response(self, request_id):
