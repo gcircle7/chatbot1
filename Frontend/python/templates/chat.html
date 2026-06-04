@@ -84,7 +84,7 @@
     <script>
         (function () {
             async function fetchResponse(message) {
-                const response = await fetch("http://localhost:8006/chat-api", {
+                const response = await fetch("{{CHATBOT_API_URL}}", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -279,7 +279,7 @@
                         }
                         resp_msg = (resp && typeof resp === "object") ? resp.response_message : resp;
                     } catch (err) {
-                        console.error(err);
+                        console.error("addMessage error: ", err);
                         resp_msg = "앗, 서버랑 연결이 안 돼 ... 잠시 후 다시 시도해줘";
                     }
                     await showBubblePromise //답변이 출력되고 버블링이 발생되는 현상 제어

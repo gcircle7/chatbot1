@@ -7,6 +7,13 @@ from flask import Flask, request, jsonify
 import sys
 import random
 import re
+
+# Windows 콘솔 기본 인코딩(cp949)은 이모지 등 일부 유니코드를 출력하지 못해
+# print 시 UnicodeEncodeError 가 발생한다. 표준 출력 스트림을 UTF-8 로 재설정한다.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 from chatbot_client import ChatbotClient
 
 from auth import (
@@ -33,6 +40,7 @@ def async_send_request(callbackUrl, future):
         response_to_kakao = chatgpt_respone_format(error_message, useCallback=False)
     else:
         response_to_kakao = chatgpt_respone_format(response_message, useCallback=False)
+    print(f"response_to_kakao: {response_to_kakao}")
     callbackResponse = requests.post(callbackUrl, json=response_to_kakao)
     print("CallbackResponse:", callbackResponse)
     return response_to_kakao
@@ -180,13 +188,15 @@ def chat_kakao():
 
     # return chatgpt_respone_format("반가워!!", useCallback=False)
 
-    db_user_id = 1
-    session_id = 11  # session_token = '71d7c0fc31e1725f880facdcbe790f01a4556917c00b9f55f28d6725aa11aba5'
+    db_user_id = 2
+    session_id = 2  # session_token = '71d7c0fc31e1725f880facdcbe790f01a4556917c00b9f55f28d6725aa11aba5'
+    print(f"kakaotalk db_user_id:  {db_user_id}, session_id:  {session_id}")
 
     # 대화 진행 
     cb_client = ChatbotClient(db_user_id, session_id)
     print(f"user message:  {request_message}")
     request_id = cb_client.add_user_message(request_message)
+    print(f"request_id:  {request_id}")
     # jjinchin.send_request 메소드가 실행될 미래를 담고 있는 future 객체 반환     
     future = executor.submit(cb_client.get_response_content, request_id)
     try:
@@ -202,7 +212,7 @@ def chat_kakao():
         if callbackUrl:
             # 3초 초과 + callbackUrl 있음 → 나중에 콜백으로 응답
             executor.submit(async_send_request, callbackUrl, future)
-            immediate_response = chatgpt_respone_format("", useCallback=True)
+            immediate_response = chatgpt_respone_format("잠시만요...", useCallback=True)
             return jsonify(immediate_response)
         # 오픈빌더 테스트 등 callbackUrl 없음 → 완료될 때까지 동기 대기
         response_status, response_message, error_message = future.result()

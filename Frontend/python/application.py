@@ -50,44 +50,8 @@ def login_required(view):
     return wrapper
 
 
-_API_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api")
-
-
-def _ensure_api_path() -> None:
-    if _API_DIR not in sys.path:
-        sys.path.insert(0, _API_DIR)
-
-
-def _resolve_db_user_id() -> int | None:
-    db_user_id = session.get("db_user_id")
-    if db_user_id:
-        return int(db_user_id)
-
-    token = session.get("session_token")
-    if not token:
-        return None
-
-    result = auth_validate_session(token)
-    if result.get("ok") and result.get("db_user_id"):
-        session["db_user_id"] = result["db_user_id"]
-        return int(result["db_user_id"])
-    return None
-
-
 def _fetch_access_history(limit: int = 30) -> list[dict]:
-    """접속 이력 조회. DB 직접 조회 우선, 실패·없음이면 빈 목록."""
-    db_user_id = _resolve_db_user_id()
-    if not db_user_id:
-        return []
-
-    try:
-        _ensure_api_path()
-        from session_service import list_access_history
-
-        return list_access_history(db_user_id, limit=limit)
-    except Exception as exc:
-        print(f"access history (db): {exc}")
-
+    """접속 이력 조회 (chatbot_api에 HTTP 위임). 실패·없음이면 빈 목록."""
     token = session.get("session_token")
     if not token:
         return []
@@ -256,8 +220,8 @@ def chat_app():
         session_token=session["session_token"] if session.get("session_token") else None,
         display_name=session["display_name"] if session.get("display_name") else None,
         embed=embed,
+        CHATBOT_API_URL=os.environ.get("CHATBOT_API_URL"),
     )
-
 
 @atexit.register
 def shutdown():

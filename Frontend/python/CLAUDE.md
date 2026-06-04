@@ -2,82 +2,51 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 프로젝트 개요
+> 저장소 전체 구조(3개 프로세스·큐 기반 데이터 흐름)는 루트 `../../CLAUDE.md` 참고. 이 문서는 **frontend 패키지** 전용 메모.
 
-Flask 기반 챗봇으로 **프론트엔드와 백엔드가 별도 프로세스**로 동작합니다.
+## 역할
 
-- **프론트엔드** (`application.py`): 정적 챗봇 UI(`templates/chat.html`) 서빙. 임의 포트.
-- **백엔드** (`api/application.py`): 룰 베이스 응답 API `/chat-api`. 포트 **8006** 고정 (프론트엔드가 그 주소로 하드코딩 호출).
+세션 기반 로그인 흐름을 가진 Flask 웹 UI. **회원가입·로그인·세션 검증·접속이력은 직접 처리하지 않고** chatbot_api(포트 8006)에 HTTP 위임한다. 챗봇 대화 자체도 프론트 서버를 거치지 않고 **브라우저가 chatbot_api 로 직접** POST 한다.
 
-두 서버가 다른 포트라 백엔드는 `after_request`에서 CORS 헤더를 응답에 직접 추가합니다.
+- Python `>=3.12`, 패키지 매니저 **uv**.
+- 주요 의존성: `flask`, `pymysql`, `bcrypt`, `requests`, `pyngrok`, `python-dotenv`.
 
-- Python `>=3.12`
-- 패키지 매니저: **uv** (`uv.lock` 사용)
-- 단일 의존성: `flask>=3.1.3`
+## 실행
 
-## 자주 쓰는 명령어
-
-### 의존성 설치
 ```powershell
 uv sync
-```
-`requirements.txt`는 `uv pip compile pyproject.toml -o requirements.txt`로 자동 생성된 파일입니다. 의존성을 추가/변경하려면 `pyproject.toml`을 수정한 뒤 `uv sync` 후 위 명령으로 재생성하세요.
-
-### 개발 서버 실행
-두 서버를 **각각 다른 터미널**에서 실행해야 합니다.
-
-프론트엔드 — 포트 번호는 필수 (`application.py:20`에서 `sys.argv[1]` 직접 참조, 누락 시 `IndexError`):
-```powershell
-uv run python application.py 8000
+uv run python application.py 8000   # 포트 인자 필수 — sys.argv[1], 누락 시 IndexError
 ```
 
-백엔드 — 인자 생략 시 기본 8006 (`api/application.py`):
-```powershell
-uv run python api/application.py
-```
+`http://localhost:8000/` 접속. 정상 동작하려면 **chatbot_api(8006)가 함께 떠 있어야** 한다(로그인·세션 검증이 거기로 간다).
 
-`host='0.0.0.0'`으로 바인딩되므로 같은 네트워크에서 접근 가능합니다. 챗봇 UI는 `http://localhost:8000/chat-app`에서 확인합니다. 백엔드만 따로 점검할 때는 `GET http://localhost:8006/health`로 헬스체크 가능.
+`.env`: `cp .env.example .env`. 핵심 키 — `FLASK_SECRET_KEY`(세션 서명), `CHATBOT_API_URL`(api 주소, 기본 `http://localhost:8006`).
 
-## 아키텍처
+## 인증 구조
 
-### 프론트엔드 라우트 (`application.py`)
-- `GET /` — 세션 검사 후 `/chat-app`(로그인됨) 또는 `/login`(로그인 안 됨)으로 리다이렉트
-- `GET /login` — 로그인 폼(`templates/login.html`) 렌더
-- `POST /login` — `MOCK_USERS` dict로 자격증명 검증, 성공 시 세션에 `username`/`display_name` 저장
-- `GET /logout` — `session.clear()` 후 `/login`으로 리다이렉트
-- `GET /chat-app` — `@login_required` 보호. 미로그인 시 `/login`으로 302
+- **세션 검증은 매 보호 라우트마다 chatbot_api 를 탄다.** `login_required` 데코레이터(`application.py`)가 Flask 세션의 `session_token` 을 꺼내 `auth_validate_session`(→ api `/auth/session/validate`)으로 검증하고, 실패 시 `session.clear()` 후 `/login` 으로 리다이렉트.
+- Flask 세션에 저장되는 값: `session_token`, `login_id`, `db_user_id`, `session_id`, `display_name`. 권위 있는 상태는 DB(api 쪽)에 있고 Flask 세션은 토큰 보관용 캐시에 가깝다.
+- api 호출은 전부 **`backend_client.py`** 를 경유한다(`auth_login`/`auth_signup`/`auth_reset_password`/`auth_logout`/`auth_validate_session`/`auth_access_history`). 새 인증 동작을 추가하면 여기에 함수를 더하고 api 쪽 `/auth/*` 라우트와 컨트랙트를 맞춘다. 비밀번호 해싱·검증은 **api 의 `auth.py`(bcrypt)** 에서 일어나며 프론트는 평문을 그대로 넘긴다.
 
-`login_required` 데코레이터는 `session["username"]` 존재 여부만 본다. 새 보호 라우트가 필요하면 같은 데코레이터를 붙이면 된다.
+## 라우트 (`application.py`)
 
-**세션 키**: `application.secret_key`는 `FLASK_SECRET_KEY` 환경변수가 있으면 그 값, 없으면 `"dev-secret-change-me"` 폴백. 운영에서는 환경변수로 반드시 주입할 것.
+- `GET /` — `index.html`. 세션 유효하면 로그인 상태로 렌더(로그인 강제 아님).
+- `GET|POST /login`, `/signup`, `/forgot-password` — 폼 렌더 + api 위임. 이미 로그인 상태면 리다이렉트.
+- `GET /logout` — api `/auth/logout` 호출 후 `session.clear()`.
+- `GET /mypage` — `@login_required`. 접속이력(`_fetch_access_history`) 포함.
+- `GET /chat-app` — `@login_required`. `chat.html` 렌더. `?embed=1` 로 임베드 모드. 세션 값과 `CHATBOT_API_URL` 을 템플릿에 주입.
 
-**목업 유저** (`MOCK_USERS` in `application.py`): `minji/1234`, `hongkwon/1234`, `test/test`. 비밀번호 해시 미적용 — 로컬/데모 한정. 실제 인증으로 교체할 때는 `MOCK_USERS` 조회 부분만 DB/외부 IDP 호출로 바꾸면 된다. 로그인 페이지(`templates/login.html`) 하단에 목업 계정 표가 노출되어 있으므로 진짜 사용자 컨텍스트에서는 이 표 블록(`.mock-users`)을 제거해야 한다.
+## 프론트엔드 ↔ chatbot_api 채팅 컨트랙트
 
-### 백엔드 라우트 (`api/application.py`)
-- `POST /chat-api` — 사용자 메시지를 룰 매칭하여 응답 반환 (`OPTIONS` 프리플라이트도 처리)
-- `GET /health` — `{"status": "ok"}` 헬스체크
+`templates/chat.html` 의 `fetchResponse()` 가 **`{{CHATBOT_API_URL}}` 로 직접** POST(프론트 서버 경유 X). `CHATBOT_API_URL` 은 `/chat-api` 엔드포인트를 가리키도록 주입되어야 한다(로컬·ngrok 공개 URL 등).
 
-백엔드의 응답 로직은 `RULES`(정규식 → 후보 리스트)와 `DEFAULTS`(기본 응답)로 구성. 매칭 시 `random.choice`로 후보 중 하나 반환, 매칭 실패 시 기본 응답. 룰을 늘리거나 줄일 때는 `api/application.py`의 `RULES` 리스트만 손대면 됩니다.
+- 요청 본문: `{ db_user_id, session_token, request_message }`
+- 응답 본문: `{ status, response_message, error_message }` — `status` 가 `failed`/`error` 면 `error_message` 를 콘솔에 출력.
 
-### 프론트엔드-백엔드 결합점
-`templates/chat.html`의 `fetchResponse()`가 `http://localhost:8006/chat-api`로 하드코딩된 POST 요청을 보냅니다.
-- 요청 본문: `{ "request_message": "<사용자 입력>" }`
-- 응답 본문: `{ "response_message": "<봇 응답>" }`
-
-백엔드 주소나 컨트랙트를 바꿀 때는 이 함수와 백엔드 코드를 함께 수정해야 합니다. 프론트엔드는 백엔드 응답을 신뢰하여 `{{{messageOutput}}}` (Handlebars triple-stash, **HTML 이스케이프 미적용**)으로 그대로 삽입하므로 백엔드가 신뢰할 수 없는 HTML을 반환하지 않도록 주의하세요.
-
-### UI 인터랙션 흐름 (`addMessage` 메서드)
-사용자 메시지 전송 → 즉시 사용자 메시지 렌더 → 500ms 후 로딩 버블 표시 → 백엔드 응답 도착 → 최소 3.5초 대기 후 응답 표시. `showBubbleAfterSeconds`/`waitSeconds`를 `Promise.all` 없이 순차 `await`하는 구조라 이 타이밍 보장을 수정할 때는 흐름 전체를 같이 봐야 합니다.
-
-### 템플릿 렌더링
-- 서버 측: Jinja2 (Flask 기본). `chat.html` 안에서 Handlebars 템플릿을 그대로 보내기 위해 `{% raw %}...{% endraw %}` 블록으로 Jinja2 파싱을 회피합니다.
-- 클라이언트 측: Handlebars.js (CDN) — 메시지 버블 두 종류(`#message-template`, `#message-response-template`)를 컴파일하여 사용.
-
-### 정적 파일
-`static/images/`의 `logo.png`(헤더 아바타), `jjinchin.png`(봇 메시지 아바타)만 사용. `chat.html`은 `url_for('static', ...)`와 직접 경로(`/static/images/...`)를 혼용하므로 경로 변경 시 두 형태 모두 확인 필요.
+응답 메시지는 Handlebars triple-stash(`{{{...}}}`, **HTML 이스케이프 미적용**)로 삽입되므로 api 가 신뢰 불가 HTML 을 반환하지 않게 할 것. 서버 측 Jinja2 와 클라이언트 Handlebars 가 같은 `{{ }}` 문법을 쓰므로 Handlebars 블록은 `{% raw %}...{% endraw %}` 로 감싼다.
 
 ## 알아둘 점
 
-- `application.py`에는 `atexit.register`로 등록된 종료 로그가 있을 뿐 별도 정리 로직은 없습니다.
-- 챗봇 UI 텍스트와 키 카피("내 찐친 고비", "민지의 chatbot")는 한국어 고정입니다.
-- 백엔드의 `Access-Control-Allow-Origin: *`은 개발 편의용입니다. 배포 시에는 프론트엔드 오리진으로 좁히세요.
+- 접속이력(`_fetch_access_history`)을 포함한 모든 DB 의존 동작은 `backend_client` 를 통해 api 에 HTTP 위임한다. frontend 는 DB 테이블에 직접 접근하지 않는다(`backend_client._request` 가 `/auth/session/history` 의 404 를 빈 목록으로 흡수).
+- DB 스키마·초기화 스크립트는 이 패키지가 아니라 **`Backend/chatbot_api/scripts/`** 에 있다(테이블을 실제로 쓰는 api/server 쪽으로 이전됨).
+- UI 카피("내 찐친 고비" 등)는 한국어 고정.
