@@ -5,7 +5,7 @@ import os
 import urllib.error
 import urllib.request
 
-API_BASE = os.environ.get("CHATBOT_API_BASE_URL", "http://localhost:8006").rstrip("/")
+API_BASE = os.environ.get("CHATBOT_API_URL", "http://localhost:8006").rstrip("/")
 
 _CONNECTION_ERROR = {
     "ok": False,
