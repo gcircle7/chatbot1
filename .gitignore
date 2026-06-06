@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info/
+.playwright-mcp/
 
 # Virtual environments
 .venv/
@@ -27,3 +28,7 @@ wheels/
 Backend/chatbot_server/sysfiles/
 Backend/chatbot_server/scripts/madefiles/
 Backend/chatbot_server/batch/madefiles/
+
+# 로그 (프로세스별 data/log)
+**/data/log/
+
