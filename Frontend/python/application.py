@@ -5,6 +5,7 @@
 - 로그인·회원가입·비밀번호 재설정은 api/application.py(포트 8006) + MySQL로 처리
 """
 
+import logging
 from flask import (
     Flask, render_template, request, redirect, url_for, session
 )
@@ -12,6 +13,11 @@ from functools import wraps
 import os
 import sys
 import atexit
+
+from logging_config import setup_logging
+
+setup_logging("frontend")
+logger = logging.getLogger(__name__)
 
 from backend_client import (
     auth_login,
@@ -209,9 +215,7 @@ def mypage():
 @application.route("/chat-app")
 @login_required
 def chat_app():
-    print("login_id=", session.get("login_id"))
-    print("display_name=", session.get("display_name"))
-    print("session_token=", session.get("session_token"))
+    logger.debug("chat-app 진입 login_id=%s display_name=%s", session.get("login_id"), session.get("display_name"))
     embed = request.args.get("embed") == "1"
 
     return render_template(
@@ -226,7 +230,7 @@ def chat_app():
 
 @atexit.register
 def shutdown():
-    print("flask shutting down...")
+    logger.info("flask shutting down...")
 
 
 if __name__ == "__main__":
