@@ -1,5 +1,8 @@
-import json 
+import json
+import logging
 from _utils.common import client, chatgpt_respone_format
+
+logger = logging.getLogger(__name__)
 
 USER_MONITOR_TEMPLATE = """
 <대화록>을 읽고 아래의 json 형식에 따라 답하세요.
@@ -62,10 +65,10 @@ class WarningAgent:
             response = json.loads(self.send_query(context))
             self.checked_list = [value for value in response.values()]
         except Exception as e:
-            print(f"monitor-user except:[{e}]")
+            logger.warning("monitor_user 예외: %s", e)
             return False
-        
-        print("self.checked_list(불쾌한 말, 모순적인 말):", self.checked_list)
+
+        logger.info("monitor_user 판정(불쾌/모순): %s", self.checked_list)
         return sum(self.checked_list) > 0  # 파이썬에서 True는 숫자 1로 연산됨
           
     def warn_user(self):
@@ -100,7 +103,7 @@ class WarningAgent:
             # print(f"query response:[{content}]")
             return content
         except Exception as e:
-            print(f"Exception 오류({type(e)}) 발생:{e}")
+            logger.warning("WarningAgent OpenAI 호출 예외(%s): %s", type(e).__name__, e)
             return chatgpt_respone_format("[경고 처리 중 문제가 발생했습니다. 잠시 뒤 이용해주세요.]")
 
 

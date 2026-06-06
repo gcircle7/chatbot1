@@ -1,5 +1,8 @@
 """채팅 내역 관리."""
+import logging
 from _utils.db import get_connection
+
+logger = logging.getLogger(__name__)
 
 class ChatHistoryManager:
     def __init__(self, **kwargs):
@@ -22,8 +25,8 @@ class ChatHistoryManager:
                     )
                     chat_history = cur.fetchall()
                     return {"ok": True, "chat_history": chat_history}
-        except Exception as e:
-            print("데이터베이스 조회에 실패했습니다.(get_chat_history) " + str(e))
+        except Exception:
+            logger.exception("채팅 내역 조회 실패(get_chat_history)")
             return {"ok": False, "chat_history": []}
 
     def save_one_chat(self, last_context):     
@@ -47,7 +50,7 @@ class ChatHistoryManager:
                     last_context["saved"] = True
                     return {"ok": True, "last_context": last_context}
         except Exception as e:
-            print("데이터베이스 등록에 실패했습니다.(save_one_chat) " + str(e))
+            logger.exception("채팅 저장 실패(save_one_chat)")
             return {"ok": False, "error": "데이터베이스 등록에 실패했습니다.(save_one_chat) " + str(e)}
 
 
@@ -77,13 +80,13 @@ class ChatHistoryManager:
                     conn.commit()
                     return {"ok": True}
         except Exception as e:
-            print("데이터베이스 등록에 실패했습니다.(save_session_chats) " + str(e))
+            logger.exception("세션 채팅 일괄 저장 실패(save_session_chats)")
             return {"ok": False, "error": "데이터베이스 등록에 실패했습니다.(save_session_chats) " + str(e)}
 
 
     def restore_session_chats(self) -> list[dict]:
         chat_history = self.get_chat_history()["chat_history"]
-        print(f"restore_session_chats: {chat_history}")
+        logger.debug("restore_session_chats: %d건 복원", len(chat_history))
         return [{"role": v['role'], "content": v['content'], "saved": True} for v in chat_history]
 
 

@@ -1,3 +1,4 @@
+import logging
 from _utils.common import client, chatgpt_respone_format
 import math
 from app.memory_manager import MemoryManager
@@ -5,6 +6,8 @@ from app.chat_history_manager import ChatHistoryManager
 import threading
 import time
 from app.warning_agent import WarningAgent
+
+logger = logging.getLogger(__name__)
 
 class Chatbot:
     
@@ -40,7 +43,7 @@ class Chatbot:
 
     def add_user_message(self, user_message):
         self.context.append({"role": "user", "content": user_message, "saved" : False})
-        print(f"user_message: {user_message}")
+        logger.info("user_message: %s", user_message)
 
     def add_ai_message(self, response):
         resp_message = {
@@ -49,7 +52,7 @@ class Chatbot:
             "saved" : False
         }
         self.context.append(resp_message)
-        print("ai_message: ", resp_message["content"]) 
+        logger.info("ai_message: %s", resp_message["content"])
 
     def get_response_content(self):
         return self.context[-1]['content']
@@ -66,14 +69,14 @@ class Chatbot:
                 presence_penalty=0
             ).model_dump()
         except Exception as e:
-            print(f"Exception 오류({type(e)}) 발생:{e}")
+            logger.warning("OpenAI 호출 예외(%s): %s", type(e).__name__, e)
             if 'maximum context length' in str(e):
                 if len(self.context) > 2:
                     self.context = [self.context[0]] + self.context[2:]
                     return self._send_request()
                 else:
                     # 마지막 답변을 요약하여 줄여서 전달 필요 (차후 구현)
-                    print("context size is too small", len(self.context))
+                    logger.warning("context size is too small: %d", len(self.context))
                     return False, chatgpt_respone_format("[내 찐친 챗봇에 문제가 발생했습니다. 잠시 뒤 이용해주세요]", finish_reason="ERROR")
             else: 
                 return False, chatgpt_respone_format("[내 찐친 챗봇에 문제가 발생했습니다. 잠시 뒤 이용해주세요]", finish_reason="ERROR")
@@ -120,7 +123,7 @@ class Chatbot:
                 remove_size = math.ceil(len(self.context) / 10)
                 self.context = [self.context[0]] + self.context[remove_size+1:]
         except Exception as e:
-            print(f"handle_token_limit exception:{e}")
+            logger.warning("handle_token_limit 예외: %s", e)
     
     def to_openai_context(self):
         return [{"role":v["role"], "content":v["content"]} for v in self.context]
