@@ -1,10 +1,12 @@
-from _utils.common import client, model, chatgpt_respone_format 
+from _utils.common import client, model, chatgpt_respone_format
 import json
+import logging
 import requests
-from pprint import pprint 
 from tavily import TavilyClient
 import os
 import datetime
+
+logger = logging.getLogger(__name__)
 
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
@@ -38,7 +40,7 @@ def get_celsius_temperature(**kwargs):
     # 현재 온도 가져오기 (섭씨)
     temperature = data['current_weather']['temperature']
 
-    print("temperature:",temperature) 
+    logger.info("temperature: %s", temperature)
     return temperature
 
 #화폐 코드
@@ -56,7 +58,7 @@ def get_currency(**kwargs):
     data = response.json()
     krw = data['rates']['KRW']
 
-    print("환율:", krw) 
+    logger.info("환율: %s", krw)
     return krw
 
 def get_today(**kwargs):
@@ -65,29 +67,29 @@ def get_today(**kwargs):
     """
     today = datetime.date.today()
     today_str = today.strftime("%Y-%m-%d")
-    print("today:", today_str)
+    logger.info("today: %s", today_str)
     return today_str
 
 def search_internet(**kwargs):
-    print("search_internet",kwargs)
+    logger.info("search_internet %s", kwargs)
     answer = tavily.search(query=kwargs['search_query'], include_answer=True)['answer']
-    print("answer",answer)
+    logger.info("answer %s", answer)
     return answer
 
 
 def search_internet_for_report(**kwargs):
-    print("search_internet",kwargs)
+    logger.info("search_internet_for_report %s", kwargs)
     response = tavily.search(query=kwargs['search_query'], max_results=2, search_depth="advanced")
-    contents = [{"content": result['content'], "url": result['url']} 
+    contents = [{"content": result['content'], "url": result['url']}
                 for result in response['results']]
-    print("contents",contents)
+    logger.info("contents %s", contents)
     return f"수집된 자료:{contents}"
 
 report_system_role = """
 다음 내용을 바탕으로 보고서를 한국어로 작성해주세요. 보고서 작성 시 url을 각주로 반드시 표시하세요.
 """
 def write_report(**kwargs):    
-    print("write_report",kwargs)
+    logger.info("write_report %s", kwargs)
     response = client.chat.completions.create(
                     timeout=90,
                     model="gpt-4o-mini",  
@@ -224,11 +226,11 @@ class FunctionCalling:
                     tool_choice="auto", 
                 )
             message = response.choices[0].message
-            message_dict = message.model_dump() 
-            pprint(("message_dict=>", message_dict))
+            message_dict = message.model_dump()
+            logger.debug("message_dict=> %s", message_dict)
             return message, message_dict
         except Exception as e:
-            print("Error occurred(analyze):",e)
+            logger.warning("analyze 오류: %s", e)
             return chatgpt_respone_format("[analyze 오류입니다]")
         
 
@@ -240,7 +242,7 @@ class FunctionCalling:
             func_name = function["name"]
             func_to_call = self.available_functions.get(func_name)
             if func_to_call is None:
-                print(f"Unknown tool (not in available_functions): {func_name}")
+                logger.warning("Unknown tool (not in available_functions): %s", func_name)
                 context.append({
                     "tool_call_id": tool_call["id"],
                     "role": "tool",
@@ -259,7 +261,7 @@ class FunctionCalling:
                     "content": str(func_response)
                 })
             except Exception as e:
-                print("Error occurred(run):",e)
+                logger.warning("run 오류: %s", e)
                 return chatgpt_respone_format("[run 오류입니다]")
     
         return client.chat.completions.create(model=self.model,messages=context).model_dump()    

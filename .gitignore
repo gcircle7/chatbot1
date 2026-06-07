@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info/
+.playwright-mcp/
 
 # Virtual environments
 .venv/
@@ -19,6 +20,9 @@ wheels/
 .ruff_cache/
 .mypy_cache/
 
+# Node (e2e 테스트 의존성)
+node_modules/
+
 # Editor
 .DS_Store
 .cursor/
@@ -27,3 +31,7 @@ wheels/
 Backend/chatbot_server/sysfiles/
 Backend/chatbot_server/scripts/madefiles/
 Backend/chatbot_server/batch/madefiles/
+
+# 로그 (프로세스별 data/log)
+**/data/log/
+

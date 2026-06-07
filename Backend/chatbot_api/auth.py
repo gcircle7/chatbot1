@@ -1,11 +1,14 @@
 """인증·회원가입·비밀번호 재설정 (MySQL user_info)."""
 
+import logging
 import re
 from datetime import datetime
 
 import bcrypt
 
 from db import get_connection
+
+logger = logging.getLogger(__name__)
 from session_service import (
     create_session,
     validate_session,
@@ -61,8 +64,8 @@ def login(login_id: str, password: str, data: dict | None = None) -> dict:
                     (login_id,),
                 )
                 user = cur.fetchone()
-    except Exception as e:
-        print(e)
+    except Exception:
+        logger.exception("로그인 조회 실패")
         return {"ok": False, "error": "데이터베이스 연결에 실패했어요."}
 
     if not user:

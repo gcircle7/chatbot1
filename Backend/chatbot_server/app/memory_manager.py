@@ -1,8 +1,11 @@
 from pymongo import MongoClient
 import os
+import logging
 from _utils.common import client, model, today, yesterday, currTime
 import json
 from pinecone import Pinecone
+
+logger = logging.getLogger(__name__)
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))    
 pinecone_index = pc.Index('jjinchin-memory')
@@ -15,7 +18,7 @@ embedding_model = "text-embedding-3-small"
 
 # 아래 사용자 질의가 오늘 이전의 기억에 대해 묻는 것인지 참/거짓으로만 응답하세요.
 NEEDS_MEMORY_TEMPLATE = """
-Answer only true/false if the user query below asks about memories before today in English.
+Answer only true/false if the user query below asks about memories before yesterday in English.
 ```
 {message}
 """
@@ -57,7 +60,7 @@ class MemoryManager:
 
     def search_mongo_db(self, _id):
         search_result = mongo_memory_collection.find_one({"_id": int(_id)})
-        print("search_result", search_result)
+        logger.debug("search_mongo_db result: %s", search_result)
         return search_result["summary"]
 
     def search_vector_db(self, message):
@@ -77,13 +80,13 @@ class MemoryManager:
             matches = None
 
         if not matches:
-            print("vector_db search result: matches is empty")
+            logger.debug("vector_db search result: matches is empty")
             return None
 
         match0 = matches[0] or {}
         _id = match0.get("id")
         score = match0.get("score", 0)
-        print("vector_db search result: id", _id, "score", score)
+        logger.debug("vector_db search result: id=%s score=%s", _id, score)
         return _id if (_id is not None and score > 0.3) else None
     
     def filter(self, message, memory, threshhold=0.6):
@@ -99,9 +102,9 @@ class MemoryManager:
                 response_format={"type":"json_object"}
             ).model_dump()   
             prob = json.loads(response['choices'][0]['message']['content'])['probability']
-            print("filter prob", prob)
+            logger.debug("filter prob: %s", prob)
         except Exception as e:
-            print("filter error", e)
+            logger.warning("filter 오류: %s", e)
             prob = 0
         return prob >= threshhold
     
@@ -123,7 +126,7 @@ class MemoryManager:
                         messages=context,
                         temperature=0,
                     ).model_dump()
-            print("needs_memory result: ", response['choices'][0]['message']['content'])
+            logger.debug("needs_memory result: %s", response['choices'][0]['message']['content'])
             return True if response['choices'][0]['message']['content'].upper() == "TRUE" else False          
         except Exception:
             return False
@@ -143,7 +146,7 @@ class MemoryManager:
             # messages.append(record)
             context[idx]['saved'] = True
 
-            print(f"save_chat message: {record}")
+            logger.debug("save_chat message: %s", record)
             mongo_chats_collection.insert_one(record)
                         
         # if len(messages) > 0:           
@@ -203,7 +206,7 @@ class MemoryManager:
         return 1 if result is None else result['_id'] + 1
 
     def build_memory(self):
-        print(f"{currTime()}: build_memory started...")
+        logger.info("%s: build_memory started...", currTime())
         date = yesterday()                        
         #date = today() # 테스트 용도
         memory_results = mongo_memory_collection.find({"date": date, "uid": self.uid})
