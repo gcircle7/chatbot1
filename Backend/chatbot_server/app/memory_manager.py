@@ -18,7 +18,7 @@ embedding_model = "text-embedding-3-small"
 
 # 아래 사용자 질의가 오늘 이전의 기억에 대해 묻는 것인지 참/거짓으로만 응답하세요.
 NEEDS_MEMORY_TEMPLATE = """
-Answer only true/false if the user query below asks about memories before today in English.
+Answer only true/false if the user query below asks about memories before yesterday in English.
 ```
 {message}
 """

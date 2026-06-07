@@ -86,10 +86,12 @@ class Chatbot:
         if self.warningAgent.monitor_user(self.context):
             return True, chatgpt_respone_format(self.warningAgent.warn_user(), "warning") 
         else:    
+            self.context[-1]['content'] += self.instruction
+
             memory_instruction = self.retrieve_memory()
-            self.context[-1]['content'] += self.instruction + (memory_instruction if memory_instruction else "") 
-            # if memory_instruction:
-            #   print("memory check end: ", self.context[-1]['content'])
+            if memory_instruction:
+                self.context[-1]['content'] += memory_instruction
+            
             tf, response = self._send_request()   
             return tf, response
     

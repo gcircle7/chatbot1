@@ -74,14 +74,17 @@ class ChatbotServer:
 
     # ----- 보조 -----
     def _session_lock(self, session_id: int) -> threading.Lock:
+        """세션별 락 조회(없으면 생성)."""
         with self._session_locks_guard:
             return self._session_locks[session_id]
 
     def _inflight_count(self) -> int:
+        """현재 워커 풀에서 처리 중인 요청 수."""
         with self._inflight_guard:
             return len(self._inflight)
 
     def _notify(self, request_id: int, status: str) -> None:
+        """API 폴링 대신 Redis로 응답 완료/실패를 통지."""
         if self._broker is not None:
             self._broker.publish(
                 response_channel(request_id),
@@ -90,10 +93,12 @@ class ChatbotServer:
 
     # ----- 메인 루프 -----
     def _work_loop(self) -> None:
+        """브로커 통지(또는 폴링) → claim → 워커 제출을 반복."""
         logger.info("챗봇 워커 시작 — 동시성=%d", self._concurrency)
 
         subscription = None
         try:
+            # 브로커 연결 성공 시 통지 대기, 실패 시 DB 폴링 fallback
             self._broker = get_broker()
             if self._broker.ping():
                 subscription = self._broker.subscribe(CHANNEL_REQUESTS)
@@ -144,6 +149,7 @@ class ChatbotServer:
         return count
 
     def _process_request(self, req: dict) -> None:
+        """단일 요청: 세션 검증 → Chatbot 호출 → 큐/응답 테이블 갱신."""
         request_id = req["id"]
         session_id = req["session_id"]
         try:
@@ -164,10 +170,11 @@ class ChatbotServer:
 
                 # 스테이트리스: 매 요청마다 컨텍스트를 DB 에서 로드해 Chatbot 생성
                 adjusted_system_role = system_role.format(user=session["display_name"])
+                adjusted_instruction = instruction.format(user=session["display_name"])
                 bot = Chatbot(
                     model=model.advanced,
                     system_role=adjusted_system_role,
-                    instruction=instruction,
+                    instruction=adjusted_instruction,
                     db_user_id=session["db_user_id"],
                     session_id=session_id,
                     user_name=session["display_name"],
@@ -175,10 +182,10 @@ class ChatbotServer:
                 )
 
                 bot.add_user_message(req["request_message"])
-                bot.save_one_chat()
+                bot.save_one_chat()  # 유저 메시지를 먼저 DB에 기록
 
                 tf, response = bot.send_request()
-                if not tf:
+                if not tf:  # WarningAgent 등으로 차단된 경우
                     error_message = response["choices"][0]["message"]["content"]
                     request_status_update(request_id, "failed", error_message=error_message)
                     self._notify(request_id, "failed")
@@ -188,6 +195,7 @@ class ChatbotServer:
                 response_message = response["choices"][0]["message"]["content"]
                 logger.info("응답 생성 — request_id=%s: %s", request_id, response_message)
 
+                # cb_response_queue INSERT + request status='responsed'
                 retval = response_send(
                     request_id, session_id, status="responsed",
                     response_message=response_message,
@@ -213,10 +221,12 @@ class ChatbotServer:
             except Exception:
                 logger.exception("실패 상태 업데이트 오류 — request_id=%s", request_id)
         finally:
+            # 슬롯 반환 — 다음 dispatch에서 새 요청 픽업 가능
             with self._inflight_guard:
                 self._inflight.discard(request_id)
 
     def _maybe_gc(self) -> None:
+        """주기적으로 오래된 큐 row 삭제."""
         now = time.monotonic()
         if now - self._last_gc < _GC_INTERVAL_SEC:
             return
@@ -237,6 +247,7 @@ class ChatbotServer:
 
     # ----- 수명주기 -----
     def run(self) -> None:
+        """메인 스레드에서 디스패처 루프를 블로킹 실행."""
         signal.signal(signal.SIGINT, self._handle_signal)
         signal.signal(signal.SIGTERM, self._handle_signal)
         self._is_running = True
@@ -247,10 +258,12 @@ class ChatbotServer:
             self._executor.shutdown(wait=False)
 
     def _handle_signal(self, signum, frame) -> None:
+        """SIGINT/SIGTERM — 루프 중단 후 즉시 프로세스 종료."""
         logger.info("종료 신호 수신 signum=%s", signum)
         self.stop()
         os._exit(0)
 
     def stop(self) -> None:
+        """디스패처 루프 종료 플래그 설정."""
         self._is_running = False
         self._stop.set()
