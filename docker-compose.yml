@@ -1,0 +1,82 @@
+services:
+
+  # ── 인프라 ──────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chatbotdb}
+      MYSQL_USER: ${MYSQL_USER:-dbadm}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./Backend/chatbot_api/scripts/sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── 애플리케이션 ─────────────────────────────────────────
+  chatbot-api:
+    build:
+      context: ./Backend/chatbot_api
+    restart: unless-stopped
+    env_file:
+      - ./Backend/chatbot_api/.env
+    environment:
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+    ports:
+      - "8006:8006"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  chatbot-server:
+    build:
+      context: ./Backend/chatbot_server
+    restart: unless-stopped
+    env_file:
+      - ./Backend/chatbot_server/.env
+    environment:
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chatbot-api:
+        condition: service_started
+
+  chatbot-frontend:
+    build:
+      context: ./Frontend/python
+    restart: unless-stopped
+    env_file:
+      - ./Frontend/python/.env
+    environment:
+      CHATBOT_API_BASE: http://chatbot-api:8006
+    ports:
+      - "8000:8000"
+    depends_on:
+      - chatbot-api
+
+volumes:
+  mysql_data:
+  redis_data:
