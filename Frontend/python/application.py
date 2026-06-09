@@ -12,6 +12,9 @@ from flask import (
 from functools import wraps
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()  # backend_client import 전에 .env 로딩
 
 from logging_config import setup_logging
 
