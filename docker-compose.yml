@@ -37,8 +37,8 @@ services:
     extra_hosts:
       # Linux 에서 host.docker.internal 이 없을 때 자동 해결
       - "host.docker.internal:host-gateway"
-    expose:
-      - "8006"
+    ports:
+      - "8006:8006"
     depends_on:
       redis:
         condition: service_healthy
