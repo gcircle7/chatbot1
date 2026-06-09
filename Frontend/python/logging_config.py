@@ -64,7 +64,7 @@ def setup_logging(process_name: str, root_dir=None, level: int | None = None) ->
 
     logger._chatbot_configured = True  # type: ignore[attr-defined]
     if effective_level <= logging.DEBUG:
-        logger.debug("로깅 초기화 완료 — 파일: %s  레벨: %s",
-                     log_dir / f"{process_name}.log",
-                     logging.getLevelName(effective_level))
+        logger.info("로깅 초기화 완료 — 파일: %s  레벨: %s",
+                    log_dir / f"{process_name}.log",
+                    logging.getLevelName(effective_level))
     return logger
