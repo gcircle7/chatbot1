@@ -1,31 +1,13 @@
 services:
 
   # ── 인프라 ──────────────────────────────────────────────
-  mysql:
-    image: mysql:8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-chatbotdb}
-      MYSQL_USER: ${MYSQL_USER:-dbadm}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./Backend/chatbot_api/scripts/sql:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # 외부 직접 접근 차단 — 앱 컨테이너에서만 접근
-    expose:
-      - "3306"
+  # MySQL: 호스트 서버의 기존 MySQL 을 그대로 사용
+  #   Windows(Docker Desktop): MYSQL_HOST=host.docker.internal
+  #   Linux(CentOS/Ubuntu):    MYSQL_HOST=172.17.0.1  또는 host-gateway
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    # 비밀번호 설정 (선택: REDIS_PASSWORD 환경변수 사용 시 활성화)
-    # command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
@@ -40,25 +22,24 @@ services:
   chatbot-api:
     build:
       context: ./Backend/chatbot_api
-      # CentOS/Ubuntu 배포 서버 대비 플랫폼 명시
-      # 빌드 머신이 ARM(M1/M2 Mac)이면 linux/amd64 로 강제
-      # x86_64 Windows/Linux 이면 주석 그대로 유지
-      # platforms:
-      #   - linux/amd64
     image: chatbot-api:latest
     restart: unless-stopped
     env_file:
       - ./secrets/chatbot_api.env
     environment:
-      MYSQL_HOST: mysql
-      MYSQL_PORT: "3306"
+      # 호스트 MySQL 접속 주소 — 환경에 맞게 .env 에서 MYSQL_HOST 를 설정
+      # Windows : MYSQL_HOST=host.docker.internal
+      # Linux   : MYSQL_HOST=172.17.0.1
+      MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+    extra_hosts:
+      # Linux 에서 host.docker.internal 이 없을 때 자동 해결
+      - "host.docker.internal:host-gateway"
     expose:
       - "8006"
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -70,13 +51,13 @@ services:
     env_file:
       - ./secrets/chatbot_server.env
     environment:
-      MYSQL_HOST: mysql
-      MYSQL_PORT: "3306"
+      MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_healthy
       chatbot-api:
@@ -90,7 +71,6 @@ services:
     env_file:
       - ./secrets/chatbot_frontend.env
     environment:
-      # 컨테이너 내부 서비스 이름으로 api 호출
       CHATBOT_API_BASE: http://chatbot-api:8006
     ports:
       - "8000:8000"
@@ -98,5 +78,4 @@ services:
       - chatbot-api
 
 volumes:
-  mysql_data:
   redis_data:
