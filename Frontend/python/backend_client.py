@@ -7,9 +7,15 @@ import urllib.request
 
 _DEFAULT_API_BASE = "http://localhost:8006"
 
+# APP_ENV: development(기본) | production
+# APP_PUBLIC_URL: 브라우저에서 접근 가능한 공개 URL (production 시 필수)
+#   예) http://chatbot.profp.co.kr
+_APP_ENV = os.environ.get("APP_ENV", "development").lower()
+_APP_PUBLIC_URL = os.environ.get("APP_PUBLIC_URL", "").rstrip("/")
+
 
 def get_api_base() -> str:
-    """chatbot_api 베이스 URL (경로는 호출부에서 붙임)."""
+    """chatbot_api 베이스 URL (서버→서버 내부 호출용)."""
     return (
         os.environ.get("CHATBOT_API_BASE")
         or os.environ.get("CHATBOT_API_URL")
@@ -18,11 +24,21 @@ def get_api_base() -> str:
 
 
 def get_chat_url() -> str:
-    """브라우저 fetch용 채팅 엔드포인트 (전체 URL)."""
+    """브라우저 fetch용 채팅 엔드포인트 (전체 URL).
+
+    우선순위:
+      1. CHATBOT_CHAT_URL 직접 설정 시 그대로 사용
+      2. APP_ENV=production + APP_PUBLIC_URL 설정 시 → {APP_PUBLIC_URL}/chat-api
+      3. APP_ENV=development (기본) → http://localhost:8006/chat-api
+    """
     explicit = os.environ.get("CHATBOT_CHAT_URL")
     if explicit:
         return explicit.rstrip("/")
-    return f"{get_api_base()}/chat-api"
+
+    if _APP_ENV == "production" and _APP_PUBLIC_URL:
+        return f"{_APP_PUBLIC_URL}/chat-api"
+
+    return f"{_DEFAULT_API_BASE}/chat-api"
 
 
 API_BASE = get_api_base()
