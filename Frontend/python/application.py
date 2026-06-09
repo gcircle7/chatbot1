@@ -12,7 +12,6 @@ from flask import (
 from functools import wraps
 import os
 import sys
-import atexit
 
 from logging_config import setup_logging
 
@@ -227,11 +226,6 @@ def chat_app():
         embed=embed,
         CHATBOT_CHAT_URL=get_chat_url(),
     )
-
-@atexit.register
-def shutdown():
-    logger.info("flask shutting down...")
-
 
 if __name__ == "__main__":
     application.run(host="0.0.0.0", port=int(sys.argv[1]))

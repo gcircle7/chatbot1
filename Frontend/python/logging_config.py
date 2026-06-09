@@ -50,5 +50,4 @@ def setup_logging(process_name: str, root_dir=None, level: int = logging.INFO) -
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
     logger._chatbot_configured = True  # type: ignore[attr-defined]
-    logger.info("로깅 초기화 완료 — 파일: %s", log_dir / f"{process_name}.log")
     return logger
