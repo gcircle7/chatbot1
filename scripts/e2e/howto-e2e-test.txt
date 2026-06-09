@@ -1,0 +1,4 @@
+cd C:\Hongza\Develops\Chatbot2\main\scripts\e2e
+npm install            # playwright 설치
+npx playwright install chromium   # 브라우저 바이너리 설치 (최초 1회)
+node smoke.mjs
